@@ -6,9 +6,42 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <string.h>
+#include <pthread.h>
 
 #define HOSTLEN 256
 #define MAX 1000
+#define TRUE 1
+#define FALSE 0
+
+//room structure
+typedef struct{
+    int id; //room number
+    char name[BUFSIZ]; //room name
+}Room;
+
+//client structure
+typedef struct{
+    int socket; //client socket
+    char name[BUFSIZ]; //client name
+    Room *room; //room in which client entered
+}Client;
+
+int client_size = 0; //number of clients
+int room_size = 0; //number of rooms
+int room_id = 0;
+
+Client clientArr[MAX];
+Room roomArr[MAX];
+
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+
+Client *addClient(int, char *); //add client in array
+void deleteClient(int); //delete client from array
+Room *addRoom(char *); //add room in array
+void deleteRoom(int); //delete room from array
+void sendMessageRoom(char *, int); //send message to every clients in room
+void sendMessageUser(char *, int); //send message to specific client in room
+void printWaitingManual(); //print Manual when client executes program
 
 int main(int argc, char *argv[])
 {
@@ -21,7 +54,7 @@ int main(int argc, char *argv[])
 
     if(argc != 3)
     {
-        fprintf(stderr, "./server port_number IPaddress");
+        fprintf(stderr, "%s port_number IPaddress", argv[0]);
         exit(1);
     }
 
@@ -86,4 +119,87 @@ int main(int argc, char *argv[])
         
     }
     
+}
+
+Client *addClient(int socket, char *name)
+{
+    pthread_mutex_lock(&lock);
+    Client *client=clientArr[client_size++]
+    client->*room = NULL;
+    strcpy(client->name, name);
+    client->socket = socket;
+    pthread_mutex_unlock(&lock);
+    return client;
+}
+
+void deleteClient(int socket)
+{
+    pthread_mutex_lock(&lock);
+    int i=0;
+    for(i=0; i<client_size; i++){
+        if(socket == clientArr[i].socket)
+        {
+            while(i<client_size-1){
+                clientArr[i]=clientArr[i+1];
+                i++;
+            }
+
+            break;
+        }
+    }
+
+    client_size--;
+    pthread_mutex_unlock(&lock);
+}
+
+Room *addRoom(char *name)
+{
+    pthread_mutex_lock(&lock);
+    Room *room = &(roomArr[room_size++]);
+    room->id = room_id++;
+    strcpy(room->name, name);
+    pthread_mutex_unlock(&lock);
+    return room;
+}
+
+void deleteRoom(int roomID)
+{
+    int i=0;
+    pthread_mutex_lock(&lock);
+    for(i=0; i<room_size; i++){
+        if(roomArr[i].id == roomID)
+        {
+            while(i<room_size-1){
+                roomArr[i] = roomArr[i+1];
+                i++;
+            }
+            break;
+        }
+    }
+    room_size--;
+    pthread_mutex_unlock(&lock);
+}
+
+void sendMessageRoom(char *msg, int roomID)
+{
+    int i=0;
+    pthread_mutex_lock(&lock);
+    for(i=0; i<client_size; i++){
+        if(clientArr[i].room->id == roomID)
+            sendMessageUser(msg, clientArr[i].socket);
+    }
+    pthread_mutex_unlock(&lock);
+} 
+void sendMessageUser(char *msg, int socket)
+{
+    if(write(socket, msg, BUFSIZ)==-1)
+    {
+        perror("user write");
+        exit(1);
+    }
+}
+
+void printWaitingManual()
+{
+
 }

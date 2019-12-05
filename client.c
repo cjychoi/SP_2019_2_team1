@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
 
     if(ac != 5)
     {
-        fprintf(stderr, "./client name port_number IPaddress");
+        fprintf(stderr, "%s name port_number IPaddress", argv[0]);
         exit(1);
     }
 

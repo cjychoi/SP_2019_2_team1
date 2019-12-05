@@ -10,6 +10,7 @@
 
 #define HOSTLEN 256
 #define MAX 1000
+
 #define TRUE 1
 #define FALSE 0
 
@@ -113,19 +114,39 @@ int main(int argc, char *argv[])
             perror("fdopen");
             exit(1);
         }
-        
-        
         fclose(sock_fp);
-        
+    }  
+}
+
+void *handle_serv(void *arg)
+{
+    Client client = (Client *)arg;
+    int serv_sock = client->socket;
+    char srcv_msg[BUFSIZ]="";
+    int i=0;
+
+    while(1){
+        fgets(srcv_msg, BUFSIZ, stdin);
+        if(!strcmp(srcv_msg, "q\n") || !strcmp(srcv_msg, "Q\n"))
+        {
+            for(i=0; i<client_size; i++){
+                sendMessageUser(srcv_msg, clientArr[i].socket);
+                close(clientArr[i].socket);
+            }
+
+            exit(0);
+        }
     }
-    
+
+    return NULL;
 }
 
 Client *addClient(int socket, char *name)
 {
     pthread_mutex_lock(&lock);
     Client *client=clientArr[client_size++]
-    client->*room = NULL;
+    client->room->id = -1;
+    client->room->name = "";
     strcpy(client->name, name);
     client->socket = socket;
     pthread_mutex_unlock(&lock);
@@ -143,7 +164,6 @@ void deleteClient(int socket)
                 clientArr[i]=clientArr[i+1];
                 i++;
             }
-
             break;
         }
     }
@@ -199,7 +219,133 @@ void sendMessageUser(char *msg, int socket)
     }
 }
 
-void printWaitingManual()
+int existRoom(int roomID)
 {
+    int i=0;
+    for(i=0; i<room_size; i++){
+        if(roomArr[i].id == roomID)
+            return TRUE;
+    }
 
+    return FALSE;
 }
+
+int existClient(int socket)
+{
+    int i=0;
+    for(i=0; i<client_size; i++){
+        if(clientArr[i].socket == socket && clientArr[i].room->id != -1)
+        {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+int getSelectedWaitingMenu(char *msg)
+{
+    if(msg == NULL)
+        return -1;
+
+    if (strcmp(msg, "\n")==0)
+        return 0;
+
+    return msg - '0';
+}
+
+void createRoom(Client *client)
+{
+    int i;
+    char name[BUFSIZ];
+    char originRoomName[BUFSIZ];
+    char cmpRoomName[BUFSIZ];
+    char buf[BUFSIZ]="";
+    
+    sprintf(buf, "[server] : Input the Room Name:\n");
+    sendMessageUser(buf, client->socket);
+
+    if(read(client->socket, buf, BUFSIZ)>0)
+    {
+        for(i=0; i<room_size; i++){
+            sscanf(roomArr[i].name, "%s %s", name, originRoomName);
+            sscanf(buf, "%s %s", name, cmpRoomName);
+            if(strcmp(originRoomName, cmpRoomName)==0)
+            {
+                enterRoom(client, arrRoom[i].id);
+                return;
+            }
+        }
+    }
+
+    Room *room = addRoom(buf);
+    enterRoom(client, room->id);
+}
+
+void listRoom(Client *client)
+{
+    char buf[BUF_SIZE] = "";
+	int i = 0;
+
+	sprintf(buf, "[server] : List Room:\n");
+	sendMessageUser(buf, client->socket);	
+
+											
+	for (i = 0; i<room_size; i++)	
+	{
+		Room * room = &(roomArr[i]);	
+										
+		sprintf(buf, "RoomName : %s \n", room->name);
+		sendMessageUser(buf, client->socket);
+	}
+
+	
+	sprintf(buf, "Total %d rooms\n", sizeRoom);
+	send
+    
+    MessageUser(buf, client->socket);
+}
+
+void listMember(Client * client, int roomId) 
+{
+	char buf[BUF_SIZE] = "";		
+	int i = 0;					
+	int sizeMember = 0;			
+
+								
+	sprintf(buf, "[server] : List Member In This Room\n");
+	sendMessageUser(buf, client->socket); 
+
+	for (i = 0; i<sizeClient; i++)	
+	{
+		if (clientArr[i].room->id == roomId)	
+		{
+			sprintf(buf, "Name : %s\n", clientArr[i].name);
+			sendMessageUser(buf, client->socket);
+			sizeMember++;	
+		}
+	}
+
+	sprintf(buf, "Total: %d Members\n", sizeMember);
+	sendMessageUser(buf, client->socket);
+}
+
+void enterRoom(Client *client, int roomID)
+{
+    char manual[BUFSIZ] = "---Commands in ChatRoom---\nexit : Exit Room\nlist : List Users in this Room\nhelp : Print This Manual\n";
+    char buf[BUFSIZ] = "";
+
+    if(!existRoom(roomID))
+    {
+        sprintf(buf, "[server] : Invalid Room ID\n");
+    }
+
+    else
+    {
+        client->room->id = roomID;
+        sprintf(buf, "[server] : %s Join the Room\n", clientArr->name);
+        sendMessageUser(manual, client->socket);
+    }
+
+    sendMessageRoom(buf, client->room->id);
+}
+

@@ -6,69 +6,100 @@
 #include <unistd.h>
 #include <netdb.h>
 #include <string.h>
+#include <pthread.h>
+
+void *send_msg(void *);
+void *recv_msg(void *);
+
+char name[BUFSIZ]="[DEFAULT]";
+char msg[BUFSIZ];
+char chat_name[BUFSIZ];
 
 int main(int argc, char *argv[])
 {
-    struct sockaddr_in servadd;
+    struct sockaddr_in serv_addr;
     struct hostent *hp;
-    int sock_id;
-    char message[BUFSIZ];
-    int messlen;
-
-    if(ac != 5)
+    int sock;						
+	pthread_t snd_thread, rcv_thread;	
+	void *thread_return;			
+    if(argc != 4)
     {
-        fprintf(stderr, "%s name port_number IPaddress", argv[0]);
+        fprintf(stderr, "%s <name> <port_number> <IPaddress>", argv[0]);
         exit(1);
     }
 
+    strcpy(name, argv[1]);
     //create client socket
-    sock_id = socket(AF_INET, SOCK_STREAM, 0);
+    sock = socket(AF_INET, SOCK_STREAM, 0);
 
-    if(sock_id == -1)
+    if(sock == -1)
     {
         perror("socket");
         exit(1);
     }
 
-    //initialize server sockaddr structure
-    bzero(&servadd, sizeof(servadd));
-    hp = gethostbyname(av[3]);
-    
-    if(hp == NULL);
-    {
-        perror(av[3]);
-        exit(1);
-    }
-
     //set values in server sockaddr structure
-    bcopy(hp->h_addr, (struct sockeaddr *)&servadd.sin_addr, hp->h_length);
-    servadd.sin_port = htons(atoi(av[2]));
-    servadd.sin_family = AF_INET;
+    memset(&serv_addr, 0, sizeof(serv_addr));
+    serv_addr.sin_port = htons(atoi(argv[2]));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr=inet_addr(argv[3]);
 
     //request connect to server socket
-    if(connect(sock_id, (struct sockaddr *)&servadd, sizeof(servadd)) != 0)
+    if(connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) != 0)
     {
         perror("connect");
         exit(1);
     }
 
-    //read
-    messlen = read(sock_id, message, BUFSIZ);
+    write(sock, name, BUFSIZ);
 
-    if(messlen == -1)
-    {
-        perror("read");
-        exit(1);
-    }
+    pthread_create(&snd_thread, NULL, send_msg, (void *)&sock);
+    pthread_create(&rcv_thread, NULL, recv_msg, (void *)&sock);
+    pthread_join(snd_thread, &thread_return);
+    pthread_join(rcv_thread, &thread_return);
+    close(sock);
+    return 0;
+}
 
-    //write
-    if(write(1, message, messlen) != messlen)
-    {
-        perror("write");
-        exit(1);
-    }
+void *send_msg(void *arg)   
+{
+	int sock=*((int*)arg);
+	char name_msg[BUFSIZ];
 
-    close(sock_id);
+	while(1) 
+	{
+		fgets(msg, BUFSIZ, stdin);	
+		if(!strcmp(msg,"q\n")||!strcmp(msg,"Q\n")) 
+		{
+			close(sock);
+			exit(0);
+		}
+		
+		sprintf(name_msg,"[%s] %s", name, msg);	
+		write(sock, name_msg, BUFSIZ);
+	}
+	return NULL;
+}
 
-        
+void *recv_msg(void *arg)   
+{
+	int sock=*((int*)arg);		
+	char name_msg[BUFSIZ];	
+	int str_len;				
+
+	while(1)
+	{
+		str_len=read(sock, name_msg, BUFSIZ);
+		if(str_len==-1){ 
+			perror("client read");
+            exit(1);
+		}
+		else if(!strcmp(name_msg, "q\n")||!strcmp(name_msg, "Q\n")){
+			close(sock);
+			exit(0);
+		}
+		
+		fputs(name_msg, stdout);	
+	}
+	return NULL;
 }

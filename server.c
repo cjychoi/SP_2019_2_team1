@@ -40,39 +40,39 @@ Room room_arr[MAX_ROOM];		// Room의 배열(현재 개설된 방의 배열)
 int issuedId = 0;			// 발급된 ID
 
 // 함수 목록
-Client *addClient(int, char *); // client_arr에 client 추가
-void removeClient(int); // client_arr에서 client 삭제(client disconnected)
-void sendMessageUser(char *, int); // 해당 사용자에게 message 보냄
-void sendMessageRoom(char *, int); // 방의 모든 사용자에게 message 보냄
-int isInARoom(int); // 해당 client가 방에 있는지 체크
-int getIndexSpace(char *); // 문자열에서 공백 확인
-int getSelectedWaitingRoomMenu(char *); // 대기화면에서 client가 고른 menu 받아옴
-void getSelectedRoomMenu(char *, char *); // 채팅방에서 client가 고른 menu 받아옴
-Room *addRoom(char *); // room_arr에 room(채팅방) 추가
-void removeRoom(int); // room_arr에서 room(채팅방) 삭제
-int isExistRoom(int); // 특정 room(채팅방)이 존재하는지 확인
-void enterRoom(Client *, int); // client가 해당 채팅방에 입장
-void createRoom(Client *); // room(채팅방) 생성
-void listRoom(Client *); // client에게 채팅방 목록 제공
-void listMember(Client *, int); // 해당 채팅방에 있는 모든 client 나열
-int getRoomId(int); // 채팅방의 id를 얻어옴
-void printWaitingRoomMenu(Client *); // 대기화면에서 사용할 수 있는 메뉴 보여줌
-void printRoomMenu(Client *); // 채팅방에서 사용할 수 있는 메뉴 보여줌
-void printHowToUse(Client *); // 사용방법 보여줌
-void serveWaitingRoomMenu(int, Client *, char *); // 대기화면에서 client가 메뉴 선택했을 때 기능 제공
-void exitRoom(Client *); // client가 채팅방에서 나감
-void serveRoomMenu(char *, Client *, char *); // 채팅방에서 client가 메뉴 입력했을 때 기능 제공
-int isEmptyRoom(int); // 빈 방인지 확인
-void error_handling(char *); // error 처리
+Client *addClient(int, char *);									// client_arr에 client 추가
+void removeClient(int);												// client_arr에서 client 삭제(client disconnected)
+void sendMessageUser(char *, int);							// 해당 사용자에게 message 보냄
+void sendMessageRoom(char *, int);						// 방의 모든 사용자에게 message 보냄
+int isInARoom(int);													// 해당 client가 방에 있는지 체크
+int getIndexSpace(char *);										// 문자열에서 공백 확인
+int getSelectedWaitingRoomMenu(char *);				// 대기화면에서 client가 고른 menu 받아옴
+void getSelectedRoomMenu(char *, char *);				// 채팅방에서 client가 고른 menu 받아옴
+Room *addRoom(char *);											// room_arr에 room(채팅방) 추가
+void removeRoom(int);												// room_arr에서 room(채팅방) 삭제
+int isExistRoom(int);													// 특정 room(채팅방)이 존재하는지 확인
+void enterRoom(Client *, int);									// client가 해당 채팅방에 입장
+void createRoom(Client *);										// room(채팅방) 생성
+void listRoom(Client *);												// client에게 채팅방 목록 제공
+void listMember(Client *, int);									// 해당 채팅방에 있는 모든 client 나열
+int getRoomId(int);													// 채팅방의 id를 얻어옴
+void printWaitingRoomMenu(Client *);						// 대기화면에서 사용할 수 있는 메뉴 보여줌
+void printRoomMenu(Client *);									// 채팅방에서 사용할 수 있는 메뉴 보여줌
+void printHowToUse(Client *);									// 사용방법 보여줌
+void serveWaitingRoomMenu(int, Client *, char *);	// 대기화면에서 client가 메뉴 선택했을 때 기능 제공
+void exitRoom(Client *);											// client가 채팅방에서 나감
+void serveRoomMenu(char *, Client *, char *);			// 채팅방에서 client가 메뉴 입력했을 때 기능 제공
+int isEmptyRoom(int);												// 빈 방인지 확인
+void error_handling(char *);										// error 처리
 
 int main(int argc, char *argv[])	
 {
-	int serv_sock, clnt_sock; // server socket, client socket
-	struct sockaddr_in serv_addr, clnt_addr; // server&client address structure
-	int caddr_size;	// clnt_addr 구조체의 사이즈를 저장할 변수
-	char nick[BUFSIZ]; // client가 채팅방에서 사용할 닉네임을 저장할 char 배열
-	pthread_t t_id;	// client 처리할 thread 변수
-	pthread_t serv_id; //server 처리할 thread 변수
+	int serv_sock, clnt_sock;							// server socket, client socket
+	struct sockaddr_in serv_addr, clnt_addr;	// server&client address structure
+	int caddr_size;											// clnt_addr 구조체의 사이즈를 저장할 변수
+	char nick[BUFSIZ];										// client가 채팅방에서 사용할 닉네임을 저장할 char 배열
+	pthread_t t_id;											// client 처리할 thread 변수
+	pthread_t serv_id;										//server 처리할 thread 변수
 
 	//사용법 알려줌
 	if (argc != 2) {	

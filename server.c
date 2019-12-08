@@ -246,6 +246,7 @@ int getSelectedWaitingRoomMenu(char *msg)
 // "방의 메뉴" - 채팅하다가 나가고 싶을 땐 나가기 명령이 필요하다.
 void getSelectedRoomMenu(char *menu, char *msg)
 {
+	char name[BUFSIZ]= "";
 	if (msg == NULL) return;	// 예외 처리 
 
 	int indexSpace = getIndexSpace(msg);	// 공백문자 위치 얻기
@@ -253,9 +254,9 @@ void getSelectedRoomMenu(char *menu, char *msg)
 		return;	// 없으면 잘못된 message
 
 	char *firstByte = &msg[indexSpace + 1];	// 공백이후의 문자열 복사
-	strcpy(menu, firstByte);	
-
-	menu[4] = 0;	// 4바이트 에서 NULL 문자 넣어 문자열 끊기
+	strcpy(menu, firstByte);
+	int menu_len = strlen(menu);
+	menu[menu_len-1] = '\0'; 	//문자열 끝에 null 문자 넣어서 끊기
 	return;
 }
 
@@ -369,8 +370,8 @@ void listRoom(Client *client)
 	{
 		Room *room = &(room_arr[i]); // get pointer of room_arr[i]
 		sscanf(room_arr[i].name, "%s %s", name, rname); // split chat name, room name								
-		sprintf(buf, "RoomName: %s \n", rname);
-		sendMessageUser(rname, client->socket);
+		sprintf(buf, "RoomName: %s\n", rname);
+		sendMessageUser(buf, client->socket);
 	}
 
 	sprintf(buf, "Total %d rooms\n", room_size);

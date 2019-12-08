@@ -15,14 +15,15 @@
 
 
 
+
 #### <실행방법>
-1. server
+**1. server**
 ``` sh
 $ gcc server.c -lpthread -o server
 $ ./server <port>
 ```
 
-2. client
+**2. client**
 ``` sh
 $ gcc client.c -lpthread -o client
 $ ./client <name> <port> <IP>
